@@ -45,8 +45,28 @@
           return;
         }
 
-        const profile = await liff.getProfile();
-        status.textContent = "こんにちは、" + profile.displayName + "さん！";
+        const accessToken = liff.getAccessToken();
+
+if (!accessToken) {
+  status.textContent = "LINE認証情報を取得できませんでした。";
+  return;
+}
+
+status.textContent = "LINE認証を確認しています...";
+
+const response = await fetch("https://script.google.com/macros/s/AKfycbyOFcFofGr7TvXj9irk1kq7ME6qefRZb60xMT5d7afXvSqpvmvDZ1iTOb-qZB3UpKWJ/exec", {
+  method: "POST",
+  headers: {
+    "Content-Type": "text/plain;charset=utf-8"
+  },
+  body: JSON.stringify({
+    accessToken: accessToken
+  })
+});
+
+const result = await response.json();
+
+status.textContent = result.message;
       } catch (error) {
         status.textContent = "接続エラー：" + error.message;
       }
