@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SKY FRIENDS</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -19,20 +20,39 @@
       padding: 30px 20px;
       border-radius: 18px;
     }
-    h1 {
-      color: #56866a;
-    }
-    p {
-      line-height: 1.8;
-    }
+    h1 { color: #56866a; }
+    p { line-height: 1.8; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>SKY FRIENDS</h1>
     <p>あの子に、また会える。</p>
-    <p>愛犬のお友達とつながる場所</p>
-    <p>ただいま準備中です 🐶</p>
+    <p id="status">LINEに接続しています...</p>
   </div>
+
+  <script>
+    const LIFF_ID = "2012343834-v6IbIhDY";
+
+    async function main() {
+      const status = document.getElementById("status");
+
+      try {
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          status.textContent = "LINEログインが必要です。";
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        status.textContent = "こんにちは、" + profile.displayName + "さん！";
+      } catch (error) {
+        status.textContent = "接続エラー：" + error.message;
+      }
+    }
+
+    main();
+  </script>
 </body>
 </html>
