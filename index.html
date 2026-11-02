@@ -144,7 +144,7 @@ const result = await response.json();
 
 status.textContent = result.message;
 
-if (result.message === "ログインを確認しました。") {
+if (result.success === true) {
   document.getElementById("dogForm").style.display = "block";
 }
       } catch (error) {
