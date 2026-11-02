@@ -22,6 +22,34 @@
     }
     h1 { color: #56866a; }
     p { line-height: 1.8; }
+    label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+input, select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #fff;
+}
+
+#registerDog {
+  width: 100%;
+  margin-top: 25px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #56866a;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+}
   </style>
 </head>
 <body>
@@ -29,6 +57,54 @@
     <h1>SKY FRIENDS</h1>
     <p>あの子に、また会える。</p>
     <p id="status">LINEに接続しています...</p>
+    <div id="dogForm" style="display:none; text-align:left; margin-top:25px;">
+  <h2>愛犬プロフィール登録</h2>
+
+  <label>愛犬のお名前</label>
+  <input id="dogName" type="text" placeholder="例：モコちゃん">
+
+  <label>犬種</label>
+  <input id="breed" type="text" placeholder="例：トイプードル">
+
+  <label>年齢</label>
+  <input id="age" type="number" placeholder="例：3">
+
+  <label>体格</label>
+  <select id="size">
+    <option value="">選択してください</option>
+    <option>小型犬</option>
+    <option>中型犬</option>
+    <option>大型犬</option>
+  </select>
+
+  <label>性格</label>
+  <select id="personality">
+    <option value="">選択してください</option>
+    <option>おだやか</option>
+    <option>活発</option>
+    <option>慎重</option>
+    <option>人懐っこい</option>
+    <option>マイペース</option>
+  </select>
+
+  <label>好きな遊び方</label>
+  <select id="playStyle">
+    <option value="">選択してください</option>
+    <option>他の犬と遊ぶ</option>
+    <option>追いかけっこ</option>
+    <option>飼い主と遊ぶ</option>
+    <option>のんびり過ごす</option>
+    <option>まだ練習中</option>
+  </select>
+
+  <label>プロフィール公開</label>
+  <select id="profilePublic">
+    <option value="公開">公開</option>
+    <option value="非公開">非公開</option>
+  </select>
+
+  <button type="button" id="registerDog">登録する</button>
+</div>
   </div>
 
   <script>
@@ -67,6 +143,10 @@ const response = await fetch("https://script.google.com/macros/s/AKfycbyOFcFofGr
 const result = await response.json();
 
 status.textContent = result.message;
+
+if (result.message === "ログインを確認しました。") {
+  document.getElementById("dogForm").style.display = "block";
+}
       } catch (error) {
         status.textContent = "接続エラー：" + error.message;
       }
