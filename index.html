@@ -69,6 +69,13 @@ input, select {
     <h1>SKY FRIENDS</h1>
     <p>あの子に、また会える。</p>
     <p id="status">LINEに接続しています...</p>
+    <!-- 現在来場中のわんちゃん -->
+<div id="publicVisitors" style="margin-top:30px; text-align:left;">
+  <h2>🐶 今、遊びに来ているわんちゃん</h2>
+  <div id="publicDogsList">
+    読み込み中...
+  </div>
+</div>
     <div id="dogForm" style="display:none; text-align:left; margin-top:25px;">
   <h2>愛犬プロフィール登録</h2>
 
@@ -179,6 +186,7 @@ status.textContent = result.message;
 
 if (result.canRegister === true) {
   await refreshMyDogs();
+  await refreshPublicDogs();
 }
       } catch (error) {
         status.textContent = "接続エラー：" + error.message;
@@ -309,8 +317,9 @@ async function sendVisitAction(action, dogIds) {
     message.textContent = result.message;
 
     if (result.success) {
-      await refreshMyDogs();
-    }
+  await refreshMyDogs();
+  await refreshPublicDogs();
+}
 
   } catch (error) {
     message.textContent = "通信エラー：" + error.message;
@@ -338,7 +347,53 @@ async function refreshMyDogs() {
   if (!result.success) {
     throw new Error(result.message);
   }
+// 現在来場中の公開わんちゃん一覧を取得
+async function refreshPublicDogs() {
+  const dogsList = document.getElementById("publicDogsList");
 
+  try {
+    const response = await fetch("GASのURL", {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain"
+      },
+      body: JSON.stringify({
+        action: "getPublicDogs",
+        accessToken: liff.getAccessToken()
+      })
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+
+    dogsList.innerHTML = "";
+
+    if (result.dogs.length === 0) {
+      dogsList.textContent = "現在、公開中の来場わんちゃんはいません。";
+      return;
+    }
+
+    result.dogs.forEach(function(dog) {
+      const dogItem = document.createElement("div");
+
+      dogItem.style.padding = "12px";
+      dogItem.style.marginBottom = "10px";
+      dogItem.style.background = "#f5f5f5";
+      dogItem.style.borderRadius = "10px";
+
+      dogItem.textContent = "🐶 " + dog.dogName + "（" + dog.breed + "）";
+
+      dogsList.appendChild(dogItem);
+    });
+
+  } catch (error) {
+    console.error("公開わんちゃん一覧エラー:", error);
+    dogsList.textContent = "わんちゃん一覧を取得できませんでした。";
+  }
+}
   const dogForm = document.getElementById("dogForm");
 const visitSection = document.getElementById("visitSection");
 
