@@ -444,5 +444,11 @@ document.getElementById("backToVisitButton").addEventListener("click", function(
   document.getElementById("dogForm").style.display = "none";
   document.getElementById("visitSection").style.display = "block";
 });
+// 公開わんちゃん一覧を30秒ごとに自動更新
+setInterval(function() {
+  if (liff.isLoggedIn()) {
+    refreshPublicDogs();
+  }
+}, 30000);
 main();
 </script>
