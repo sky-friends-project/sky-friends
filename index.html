@@ -115,7 +115,17 @@ input, select {
     <option>のんびり過ごす</option>
     <option>まだ練習中</option>
   </select>
+<label>愛犬の写真</label>
+<input
+  id="dogPhoto"
+  type="file"
+  accept="image/*"
+>
 
+<img
+  id="dogPhotoPreview"
+  style="display:none; width:150px; height:150px; object-fit:cover; border-radius:12px; margin-top:10px;"
+>
   <label>プロフィール公開</label>
   <select id="profilePublic">
     <option value="公開">公開</option>
@@ -193,6 +203,18 @@ if (result.canRegister === true) {
       }
     }
 document.getElementById("registerDog").addEventListener("click", async function() {
+  // 選択された写真を送信用データに変換
+const photoFile = document.getElementById("dogPhoto").files[0];
+let photoData = "";
+
+if (photoFile) {
+  try {
+    photoData = await compressDogPhoto(photoFile);
+  } catch (error) {
+    alert("写真を読み込めませんでした。別の写真をお試しください。");
+    return;
+  }
+}
   const dogData = {
     action: "registerDog",
     accessToken: liff.getAccessToken(),
@@ -202,7 +224,8 @@ document.getElementById("registerDog").addEventListener("click", async function(
     size: document.getElementById("size").value,
     personality: document.getElementById("personality").value,
     playStyle: document.getElementById("playStyle").value,
-    profilePublic: document.getElementById("profilePublic").value
+    profilePublic: document.getElementById("profilePublic").value,
+photoData: photoData
   };
 
   if (
@@ -232,6 +255,15 @@ document.getElementById("registerDog").addEventListener("click", async function(
 alert(result.message);
 
 if (result.success) {
+  // 写真選択欄をリセット
+  document.getElementById("dogPhoto").value = "";
+
+  // 写真プレビューをリセット
+  const preview = document.getElementById("dogPhotoPreview");
+  preview.src = "";
+  preview.style.display = "none";
+
+  // 愛犬一覧を更新
   await refreshMyDogs();
   await refreshPublicDogs();
 }
@@ -243,6 +275,46 @@ if (result.success) {
     document.getElementById("registerDog").disabled = false;
   }
 });
+// 愛犬写真を圧縮して送信用データに変換
+function compressDogPhoto(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+      const image = new Image();
+
+      image.onload = function() {
+        const canvas = document.createElement("canvas");
+        const maxSize = 800;
+
+        let width = image.width;
+        let height = image.height;
+
+        if (width > height && width > maxSize) {
+          height = Math.round(height * maxSize / width);
+          width = maxSize;
+        } else if (height >= width && height > maxSize) {
+          width = Math.round(width * maxSize / height);
+          height = maxSize;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, width, height);
+
+        resolve(canvas.toDataURL("image/jpeg", 0.7));
+      };
+
+      image.onerror = reject;
+      image.src = event.target.result;
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 // 選択された愛犬IDを取得
 function getSelectedDogIds(action) {
   return Array.from(
@@ -350,23 +422,56 @@ async function refreshMyDogs() {
   }
 
   const dogForm = document.getElementById("dogForm");
-const visitSection = document.getElementById("visitSection");
+  const visitSection = document.getElementById("visitSection");
+  const dogsList = document.getElementById("myDogsList");
 
-const dogsList = document.getElementById("myDogsList");
-dogsList.innerHTML = "";
+  dogsList.innerHTML = "";
 
-if (result.dogs.length === 0) {
-  dogForm.style.display = "block";
-  visitSection.style.display = "none";
-  dogsList.textContent = "登録済みの愛犬はいません。";
-  return;
-}
+  if (result.dogs.length === 0) {
+    dogForm.style.display = "block";
+    visitSection.style.display = "none";
+    dogsList.textContent = "登録済みの愛犬はいません。";
+    return;
+  }
 
-dogForm.style.display = "none";
-visitSection.style.display = "block";
+  dogForm.style.display = "none";
+  visitSection.style.display = "block";
 
-  result.dogs.forEach(function(dog) {
+  for (const dog of result.dogs) {
     const dogItem = document.createElement("div");
+
+    const dogPhoto = document.createElement("img");
+    dogPhoto.style.width = "100px";
+    dogPhoto.style.height = "100px";
+    dogPhoto.style.objectFit = "cover";
+    dogPhoto.style.borderRadius = "12px";
+    dogPhoto.style.display = "none";
+    dogPhoto.style.marginBottom = "8px";
+
+    dogItem.appendChild(dogPhoto);
+
+    try {
+      const photoResponse = await fetch("https://script.google.com/macros/s/AKfycbyOFcFofGr7TvXj9irk1kq7ME6qefRZb60xMT5d7afXvSqpvmvDZ1iTOb-qZB3UpKWJ/exec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          action: "getDogPhoto",
+          accessToken: liff.getAccessToken(),
+          dogId: dog.dogId
+        })
+      });
+
+      const photoResult = await photoResponse.json();
+
+      if (photoResult.success && photoResult.photoData) {
+        dogPhoto.src = photoResult.photoData;
+        dogPhoto.style.display = "block";
+      }
+    } catch (error) {
+      console.error("写真取得エラー:", error);
+    }
 
     const label = document.createElement("label");
     const checkbox = document.createElement("input");
@@ -385,7 +490,7 @@ visitSection.style.display = "block";
 
     dogItem.appendChild(label);
     dogsList.appendChild(dogItem);
-  });
+  }
 }
 // 現在来場中の公開わんちゃん一覧を取得
 async function refreshPublicDogs() {
@@ -443,6 +548,33 @@ document.getElementById("showDogFormButton").addEventListener("click", function(
 document.getElementById("backToVisitButton").addEventListener("click", function() {
   document.getElementById("dogForm").style.display = "none";
   document.getElementById("visitSection").style.display = "block";
+});
+// 選択した愛犬写真をプレビュー表示
+document.getElementById("dogPhoto").addEventListener("change", function() {
+  const file = this.files[0];
+  const preview = document.getElementById("dogPhotoPreview");
+
+  if (!file) {
+    preview.style.display = "none";
+    preview.src = "";
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    alert("画像ファイルを選択してください。");
+    this.value = "";
+    preview.style.display = "none";
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(event) {
+    preview.src = event.target.result;
+    preview.style.display = "block";
+  };
+
+  reader.readAsDataURL(file);
 });
 // 公開わんちゃん一覧を30秒ごとに自動更新
 setInterval(function() {
