@@ -564,6 +564,56 @@ async function refreshMyDogs() {
     });
 
     dogItem.appendChild(editButton);
+    // 削除ボタン
+const deleteButton = document.createElement("button");
+deleteButton.type = "button";
+deleteButton.textContent = "愛犬プロフィールを削除";
+deleteButton.style.display = "block";
+deleteButton.style.marginTop = "8px";
+deleteButton.style.marginBottom = "20px";
+deleteButton.style.color = "#fff";
+deleteButton.style.background = "#d9534f";
+deleteButton.style.border = "none";
+deleteButton.style.padding = "10px 15px";
+deleteButton.style.borderRadius = "6px";
+
+deleteButton.addEventListener("click", async function() {
+  if (!confirm("「" + dog.dogName + "」のプロフィールを削除しますか？\n過去の来場履歴は残ります。")) {
+    return;
+  }
+
+  try {
+    const deleteResponse = await fetch("https://script.google.com/macros/s/AKfycbyOFcFofGr7TvXj9irk1kq7ME6qefRZb60xMT5d7afXvSqpvmvDZ1iTOb-qZB3UpKWJ/exec", {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "deleteDog",
+        accessToken: liff.getAccessToken(),
+        dogId: dog.dogId
+      })
+    });
+
+    const deleteResult = await deleteResponse.json();
+
+    if (!deleteResult.success) {
+      alert(deleteResult.message);
+      return;
+    }
+
+    alert(deleteResult.message);
+
+    await refreshMyDogs();
+    await refreshPublicDogs();
+
+  } catch (error) {
+    console.error("削除エラー:", error);
+    alert("削除できませんでした。もう一度お試しください。");
+  }
+});
+
+dogItem.appendChild(deleteButton);
     dogsList.appendChild(dogItem);
   }
 }
