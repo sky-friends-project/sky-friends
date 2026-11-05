@@ -599,12 +599,111 @@ async function refreshPublicDogs() {
     result.dogs.forEach(function(dog) {
       const dogItem = document.createElement("div");
 
-      dogItem.style.padding = "12px";
+      dogItem.style.padding = "10px";
       dogItem.style.marginBottom = "10px";
       dogItem.style.background = "#f5f5f5";
       dogItem.style.borderRadius = "10px";
+      dogItem.style.cursor = "pointer";
 
-      dogItem.textContent = "🐶 " + dog.dogName + "（" + dog.breed + "）";
+      const dogRow = document.createElement("div");
+      dogRow.style.display = "flex";
+      dogRow.style.alignItems = "center";
+      dogRow.style.gap = "12px";
+
+      // 登録写真
+      const photo = document.createElement("img");
+      photo.style.width = "65px";
+      photo.style.height = "65px";
+      photo.style.objectFit = "cover";
+      photo.style.borderRadius = "10px";
+      photo.style.flexShrink = "0";
+
+      if (dog.photoData && dog.photoMimeType) {
+        photo.src = "data:" + dog.photoMimeType + ";base64," + dog.photoData;
+      } else {
+        photo.style.display = "none";
+      }
+
+      // 名前と犬種
+      const dogInfo = document.createElement("div");
+      dogInfo.style.flex = "1";
+
+      const name = document.createElement("div");
+      name.textContent = "🐶 " + dog.dogName;
+      name.style.fontWeight = "bold";
+
+      const breed = document.createElement("div");
+      breed.textContent = dog.breed || "";
+      breed.style.fontSize = "13px";
+      breed.style.color = "#666";
+      breed.style.marginTop = "4px";
+
+      const hint = document.createElement("div");
+      hint.textContent = "タップしてプロフィールを見る";
+      hint.style.fontSize = "11px";
+      hint.style.color = "#888";
+      hint.style.marginTop = "5px";
+
+      dogInfo.appendChild(name);
+      dogInfo.appendChild(breed);
+      dogInfo.appendChild(hint);
+
+      const arrow = document.createElement("div");
+      arrow.textContent = "›";
+      arrow.style.fontSize = "24px";
+      arrow.style.color = "#888";
+
+      dogRow.appendChild(photo);
+      dogRow.appendChild(dogInfo);
+      dogRow.appendChild(arrow);
+
+      // 詳細プロフィール（最初は非表示）
+      const detail = document.createElement("div");
+      detail.style.display = "none";
+      detail.style.marginTop = "12px";
+      detail.style.paddingTop = "12px";
+      detail.style.borderTop = "1px solid #ddd";
+
+      function addProfileLine(label, value) {
+        if (!value) return;
+
+        const line = document.createElement("div");
+        line.style.fontSize = "13px";
+        line.style.marginBottom = "7px";
+        line.textContent = label + "：" + value;
+
+        detail.appendChild(line);
+      }
+
+      if (dog.photoData && dog.photoMimeType) {
+        const detailPhoto = document.createElement("img");
+        detailPhoto.src = "data:" + dog.photoMimeType + ";base64," + dog.photoData;
+        detailPhoto.style.width = "100%";
+        detailPhoto.style.maxWidth = "240px";
+        detailPhoto.style.borderRadius = "10px";
+        detailPhoto.style.display = "block";
+        detailPhoto.style.marginBottom = "12px";
+
+        detail.appendChild(detailPhoto);
+      }
+
+      addProfileLine("お名前", dog.dogName);
+      addProfileLine("犬種", dog.breed);
+      addProfileLine("年齢", dog.age);
+      addProfileLine("サイズ", dog.size);
+      addProfileLine("性格", dog.personality);
+      addProfileLine("好きな遊び方", dog.playStyle);
+
+      // タップで詳細を開閉
+dogItem.addEventListener("click", function(event) {
+  if (event.target.tagName === "IMG") return;
+
+  detail.style.display =
+    detail.style.display === "none" ? "block" : "none";
+});
+
+      dogItem.appendChild(dogRow);
+      dogItem.appendChild(detail);
 
       dogsList.appendChild(dogItem);
     });
@@ -613,8 +712,7 @@ async function refreshPublicDogs() {
     console.error("公開わんちゃん一覧エラー:", error);
     dogsList.textContent = "わんちゃん一覧を取得できませんでした。";
   }
-}
-// 愛犬の追加登録フォームを表示
+}// 愛犬の追加登録フォームを表示
 document.getElementById("showDogFormButton").addEventListener("click", function() {
 
   // 編集モードを解除
