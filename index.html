@@ -499,83 +499,104 @@ async function refreshMyDogs() {
   visitSection.style.display = "block";
 
   for (const dog of result.dogs) {
-    const dogItem = document.createElement("div");
+const dogItem = document.createElement("div");
+dogItem.style.display = "flex";
+dogItem.style.alignItems = "center";
+dogItem.style.gap = "12px";
+dogItem.style.padding = "12px 0";
+dogItem.style.borderBottom = "1px solid #ddd";
 
-    const dogPhoto = document.createElement("img");
-    dogPhoto.style.width = "100px";
-    dogPhoto.style.height = "100px";
-    dogPhoto.style.objectFit = "cover";
-    dogPhoto.style.borderRadius = "12px";
-    dogPhoto.style.display = "none";
-    dogPhoto.style.marginBottom = "8px";
+// 愛犬の写真
+const dogPhoto = document.createElement("img");
+dogPhoto.style.width = "100px";
+dogPhoto.style.height = "100px";
+dogPhoto.style.objectFit = "cover";
+dogPhoto.style.borderRadius = "12px";
+dogPhoto.style.flexShrink = "0";
+dogPhoto.style.background = "#eee";
 
-    dogItem.appendChild(dogPhoto);
+try {
+  const photoResponse = await fetch("https://script.google.com/macros/s/AKfycbyOFcFofGr7TvXj9irk1kq7ME6qefRZb60xMT5d7afXvSqpvmvDZ1iTOb-qZB3UpKWJ/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      action: "getDogPhoto",
+      accessToken: liff.getAccessToken(),
+      dogId: dog.dogId
+    })
+  });
 
-    try {
-      const photoResponse = await fetch("https://script.google.com/macros/s/AKfycbyOFcFofGr7TvXj9irk1kq7ME6qefRZb60xMT5d7afXvSqpvmvDZ1iTOb-qZB3UpKWJ/exec", {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: JSON.stringify({
-          action: "getDogPhoto",
-          accessToken: liff.getAccessToken(),
-          dogId: dog.dogId
-        })
-      });
+  const photoResult = await photoResponse.json();
 
-      const photoResult = await photoResponse.json();
+  if (photoResult.success && photoResult.photoData) {
+    dogPhoto.src = photoResult.photoData;
+  }
 
-      if (photoResult.success && photoResult.photoData) {
-        dogPhoto.src = photoResult.photoData;
-        dogPhoto.style.display = "block";
-      }
-    } catch (error) {
-      console.error("写真取得エラー:", error);
-    }
+} catch (error) {
+  console.error("写真取得エラー:", error);
+}
 
-    const label = document.createElement("label");
-    const checkbox = document.createElement("input");
+// 右側の情報エリア
+const infoArea = document.createElement("div");
+infoArea.style.flex = "1";
+infoArea.style.minWidth = "0";
 
-    checkbox.type = "checkbox";
-    checkbox.value = dog.dogId;
-    checkbox.dataset.checkedIn = dog.isCheckedIn ? "true" : "false";
+// 名前とチェックイン状態
+const label = document.createElement("label");
+label.style.display = "block";
+label.style.fontWeight = "bold";
+label.style.marginBottom = "8px";
 
-    label.appendChild(checkbox);
-    label.appendChild(
-      document.createTextNode(
-        " " + dog.dogName + "（" + dog.breed + "）" +
-        (dog.isCheckedIn ? "【来場中】" : "【未チェックイン】")
-      )
-    );
+const checkbox = document.createElement("input");
+checkbox.type = "checkbox";
+checkbox.value = dog.dogId;
+checkbox.dataset.checkedIn = dog.isCheckedIn ? "true" : "false";
 
-        dogItem.appendChild(label);
+label.appendChild(checkbox);
+label.appendChild(
+  document.createTextNode(
+    " " + dog.dogName + "（" + dog.breed + "）"
+  )
+);
 
-    // プロフィール編集ボタン
-    const editButton = document.createElement("button");
-    editButton.type = "button";
-    editButton.textContent = "プロフィール編集";
-    editButton.style.display = "block";
-    editButton.style.marginTop = "10px";
-    editButton.style.marginBottom = "20px";
+const status = document.createElement("div");
+status.textContent = dog.isCheckedIn ? "● 来場中" : "○ 未チェックイン";
+status.style.fontSize = "12px";
+status.style.color = dog.isCheckedIn ? "#2e8b57" : "#888";
+status.style.marginBottom = "10px";
 
-    editButton.addEventListener("click", function() {
-      editDogProfile(dog);
-    });
+// ボタンエリア
+const buttonArea = document.createElement("div");
+buttonArea.style.display = "flex";
+buttonArea.style.flexWrap = "wrap";
+buttonArea.style.gap = "6px";
 
-    dogItem.appendChild(editButton);
-    // 削除ボタン
+// プロフィール編集ボタン
+const editButton = document.createElement("button");
+editButton.type = "button";
+editButton.textContent = "プロフィール編集";
+editButton.style.padding = "6px 8px";
+editButton.style.fontSize = "11px";
+editButton.style.borderRadius = "5px";
+editButton.style.border = "1px solid #ccc";
+editButton.style.background = "#fff";
+
+editButton.addEventListener("click", function() {
+  editDogProfile(dog);
+});
+
+// 削除ボタン
 const deleteButton = document.createElement("button");
 deleteButton.type = "button";
-deleteButton.textContent = "愛犬プロフィールを削除";
-deleteButton.style.display = "block";
-deleteButton.style.marginTop = "8px";
-deleteButton.style.marginBottom = "20px";
+deleteButton.textContent = "削除";
+deleteButton.style.padding = "6px 10px";
+deleteButton.style.fontSize = "11px";
 deleteButton.style.color = "#fff";
 deleteButton.style.background = "#d9534f";
 deleteButton.style.border = "none";
-deleteButton.style.padding = "10px 15px";
-deleteButton.style.borderRadius = "6px";
+deleteButton.style.borderRadius = "5px";
 
 deleteButton.addEventListener("click", async function() {
   if (!confirm("「" + dog.dogName + "」のプロフィールを削除しますか？\n過去の来場履歴は残ります。")) {
@@ -613,7 +634,17 @@ deleteButton.addEventListener("click", async function() {
   }
 });
 
-dogItem.appendChild(deleteButton);
+// 右側に配置
+buttonArea.appendChild(editButton);
+buttonArea.appendChild(deleteButton);
+
+infoArea.appendChild(label);
+infoArea.appendChild(status);
+infoArea.appendChild(buttonArea);
+
+// 写真と情報を横並びにする
+dogItem.appendChild(dogPhoto);
+dogItem.appendChild(infoArea);
     dogsList.appendChild(dogItem);
   }
 }
